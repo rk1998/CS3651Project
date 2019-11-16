@@ -30,12 +30,13 @@ Stepper motor = Stepper(4, motor1, motor2, motor3, motor4);
 HX711 scale;
 
 
-int feedVal = 0;
+int feedVal = 5;
 int feed1hour = 8;
 int feed1minute = 30;
 int feed2hour = 15;
 int feed2minute = 30;
 
+//volatile int virtualPosition = 0;
 
 void setup() {
   rtc.begin();
@@ -48,10 +49,11 @@ void setup() {
   pinMode(setTimeButton, INPUT_PULLUP);
   pinMode(increaseButton, INPUT_PULLUP);
   pinMode(decreaseButton, INPUT_PULLUP);
+  pinMode(manualFeedButton, INPUT_PULLUP);
 //  scale.begin(scale_dout, scale_clk);
 //  scale.set_scale(calibration_factor);
 //  scale.tare();
-  //motor.setSpeed(5000);
+  motor.setSpeed(5000);
 }
 
 void printDigits(int digits){   // utility function for digital clock display: prints leading 0
@@ -61,10 +63,13 @@ void printDigits(int digits){   // utility function for digital clock display: p
    lcd.print(digits);
  }
 
+
 void loop() {
   static int8_t lastSecond = -1;
   static long virtualPosition = 0;
   rtc.update();
+  int currHour = rtc.hour();
+  int currMinute = rtc.minute();
   if(rtc.second() != lastSecond) {
     printTime();
     lastSecond = rtc.second();
@@ -73,7 +78,7 @@ void loop() {
     lcd.clear();
     lcd.blink();
     lcd.setCursor(0, 0);
-    lcd.print("Set Feed Time:");
+    lcd.print("Set 1st Feed Time:");
     virtualPosition = feed1hour;
     do {
       lcd.setCursor(2, 1);
@@ -92,7 +97,9 @@ void loop() {
       Serial.println(virtualPosition);
       feed1hour = virtualPosition;
       lcd.setCursor(2, 1);
-      lcd.print(String(feed1hour) + ":" + String(feed1minute));
+      printDigits(feed1hour);
+      lcd.print(":" + String(feed1minute));
+      //lcd.print(String(feed1hour) + ":" + String(feed1minute));
     }while((digitalRead(setTimeButton)));
     lcd.noBlink();
     delay(1000);
@@ -100,9 +107,9 @@ void loop() {
     
     lcd.blink();
     lcd.setCursor(0, 0);
-    lcd.print("Set Feed Time:");
-    lcd.setCursor(2, 1);
-    lcd.print(String(feed1hour) + ":" + String(feed1minute));
+    lcd.print("Set 1st Feed Time:");
+//    lcd.setCursor(2, 1);
+//    lcd.print(String(feed1hour) + ":" + String(feed1minute));
     lcd.blink();
     do {
       lcd.setCursor(5, 1);
@@ -121,15 +128,130 @@ void loop() {
       }
       feed1minute = virtualPosition;
       lcd.setCursor(2, 1);
-      lcd.print(String(feed1hour) + ":");
+      printDigits(feed1hour);
+      lcd.setCursor(4, 1);
+      lcd.print(":");
+      //lcd.print(String(feed1hour) + ":");
       lcd.setCursor(5, 1);
-      lcd.print(String(feed1minute));
+      printDigits(feed1minute);
+      //lcd.print(String(feed1minute));
     }while(digitalRead(setTimeButton));
     lcd.noBlink();
     delay(1000);
+
+    lcd.clear();
+    lcd.blink();
+    lcd.setCursor(0, 0);
+    lcd.print("Set 2nd Feed Time:");
+    virtualPosition = feed2hour;
+    do {
+      lcd.setCursor(2, 1);
+      delay(500);
+      if(digitalRead(increaseButton) == LOW){
+          virtualPosition++;
+          if(virtualPosition > 23) {
+              virtualPosition = 0;
+          }
+      } else if(digitalRead(decreaseButton) == LOW) {
+          virtualPosition--;
+          if(virtualPosition < 0) {
+            virtualPosition = 23;
+          }
+      }
+      Serial.println(virtualPosition);
+      feed2hour = virtualPosition;
+      lcd.setCursor(2, 1);
+      printDigits(feed2hour);
+      lcd.print(":" + String(feed2minute));
+    }while((digitalRead(setTimeButton)));
+    lcd.noBlink();
+    delay(1000);
+    lcd.clear();
+    
+    lcd.blink();
+    lcd.setCursor(0, 0);
+    lcd.print("Set 2nd Feed Time:");
+    lcd.blink();
+    do {
+      lcd.setCursor(5, 1);
+      delay(500);
+      virtualPosition = feed2minute;
+      if(digitalRead(increaseButton) == LOW) {
+         virtualPosition++;
+         if(virtualPosition > 59) {
+            virtualPosition = 0;
+         }
+      } else if(digitalRead(decreaseButton) == LOW) {
+        virtualPosition--;
+        if(virtualPosition < 0) {
+          virtualPosition = 59;
+        }
+      }
+      feed1minute = virtualPosition;
+      lcd.setCursor(2, 1);
+      printDigits(feed2hour);
+      lcd.setCursor(4, 1);
+      lcd.print(":");
+      //lcd.print(String(feed1hour) + ":");
+      lcd.setCursor(5, 1);
+      printDigits(feed2minute);
+    }while(digitalRead(setTimeButton));
+    lcd.noBlink();
+    delay(1000);
+    
+  }
+
+  if(digitalRead(setWeightButton) == LOW) {
+    lcd.clear();
+    lcd.blink();
+    lcd.setCursor(0, 0);
+    lcd.print("Set Feed Qty(grams): ");
+    virtualPosition = feedVal;
+    do {
+      lcd.setCursor(2, 1);
+      delay(500);
+      if(digitalRead(increaseButton) == LOW){
+          virtualPosition++;
+          if(virtualPosition > 23) {
+              virtualPosition = 0;
+          }
+      } else if(digitalRead(decreaseButton) == LOW) {
+          virtualPosition--;
+          if(virtualPosition < 0) {
+            virtualPosition = 23;
+          }
+      }
+      Serial.println(virtualPosition);
+      feedVal = virtualPosition;
+      lcd.setCursor(2, 1);
+      printDigits(feedVal);
+    }while(digitalRead(setWeightButton));
+    lcd.noBlink();
+    delay(1000);
+    lcd.clear();
+  }
+  
+  if(digitalRead(manualFeedButton) == LOW) {
+    feedCycle();
+  }
+  if((currHour == feed1hour) && (currMinute == feed1minute)) {
+    feedCycle();
+  } else if((currHour == feed2hour) && (currMinute == feed2minute)) {
+    feedCycle();
   }
   //motor.step(1);
   
+}
+
+void feedCycle() {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Let's Eat!");
+  delay(1000);
+  for(int i = 0; i < 1000; i++) {
+   motor.step(1); 
+  }
+  lcd.clear();
 }
 
 void printTime()
