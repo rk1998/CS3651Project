@@ -31,15 +31,16 @@ Stepper motor = Stepper(MOTOR_STEPS, motor1, motor2, motor3, motor4);
 HX711 scale;
 
 
-float feedVal = 15; //in grams
-int feed1hour = 8;
-int feed1minute = 30;
-int feed2hour = 17;
-int feed2minute = 47;
+float feedVal = 20; //in grams
+int feed1hour = 13;
+int feed1minute = 45;
+int feed2hour = 14;
+int feed2minute = 15;
 
-float scale_calibration_factor = 545800;
-float scale_zero_factor = 2676; 
+float scale_calibration_factor = 561400;
+float scale_zero_factor = 3705; 
 boolean bowl_full = false;
+boolean stepper_direction = true;
 
 //volatile int virtualPosition = 0; `
 void setup() {
@@ -56,8 +57,10 @@ void setup() {
   pinMode(manualFeedButton, INPUT_PULLUP);
   scale.begin(scale_dout, scale_clk);
   scale.set_scale(scale_calibration_factor);
-  scale.set_offset(2676);
-  //scale.tare();
+  
+  long zero_factor = scale.read_average(10);
+  //scale.set_offset(2049);
+  scale.tare();
   motor.setSpeed(MOTOR_SPEED);
 }
 
@@ -251,6 +254,7 @@ void loop() {
   }
   //motor.step(1);
   float current_weight = (scale.get_units(2)/0.453592)*1000;
+  Serial.println("CURRENT WEIGHT: " + String(current_weight));
   if(current_weight >= .80 * feedVal) {
     bowl_full = true;
   } else {
@@ -264,7 +268,6 @@ void feedCycle() {
   lcd.print("Let's Eat!");
   delay(500);
   motor.setSpeed(MOTOR_SPEED);
-  boolean direction = true;
   while(true) {
    float current_weight = (scale.get_units(10)/0.453592)*1000; //get weight in grams
    Serial.println("WEIGHT: " + String(current_weight));
@@ -273,16 +276,16 @@ void feedCycle() {
    if(current_weight >= .80 * feedVal) {
     //lcd.print("Curr Weight: " + String(current_weight));
     bowl_full = true;
-    delay(1500);
+    delay(2000);
     break;
    }
-   motor.step(-2038);
-//   if(direction) {
-//    motor.step(2038);
+   motor.step(1019);
+//   if(stepper_direction == true) {
+//    motor.step(1019);
 //   } else {
-//     motor.step(-2038);
+//     motor.step(-1019);
 //   }
-//   direction = !direction;
+//   stepper_direction = !stepper_direction;
    
   }
   lcd.clear();
@@ -291,30 +294,30 @@ void feedCycle() {
 void printTime()
 {
   lcd.setCursor(0, 0);
-  Serial.print(String(rtc.hour()) + ":"); // Print hour
+  //Serial.print(String(rtc.hour()) + ":"); // Print hour
   lcd.print(String(rtc.hour()) + ":");
   if (rtc.minute() < 10) {
     Serial.print('0'); // Print leading '0' for minute
     lcd.print('0');
   }
-  Serial.print(String(rtc.minute()) + ":"); // Print minute
+  //Serial.print(String(rtc.minute()) + ":"); // Print minute
   lcd.print(String(rtc.minute()) + ":");
   if (rtc.second() < 10) {
     Serial.print('0'); // Print leading '0' for second
     lcd.print('0');
   }
-  Serial.print(String(rtc.second())); // Print second
+  //Serial.print(String(rtc.second())); // Print second
   lcd.print(String(rtc.second()));
 
   if (rtc.is12Hour()) // If we're in 12-hour mode
   {
     // Use rtc.pm() to read the AM/PM state of the hour
     if (rtc.pm()) {
-      Serial.print(" PM"); // Returns true if PM
+      //Serial.print(" PM"); // Returns true if PM
       lcd.print(" PM");
     }
     else {
-      Serial.print(" AM");
+      //Serial.print(" AM");
       lcd.print(" AM");
     }
   }
