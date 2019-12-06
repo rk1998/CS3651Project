@@ -2,7 +2,7 @@
  Example using the SparkFun HX711 breakout board with a scale
  By: Nathan Seidle
  SparkFun Electronics
- Date: November 19th, 2014
+ Date: November 19th, 20144
  License: This code is public domain but you buy me a beer if you use this and we meet someday (Beerware license).
 
  This example demonstrates basic scale output. See the calibration sketch to get the calibration_factor for your

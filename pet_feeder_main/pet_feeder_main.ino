@@ -27,7 +27,7 @@ const int manualFeedButton = 16;
 const int increaseButton = 19;
 const int decreaseButton = 18;
 
-Stepper motor = Stepper(MOTOR_STEPS, motor1, motor2, motor3, motor4);
+Stepper motor = Stepper(MOTOR_STEPS, motor1, motor3, motor2, motor4);
 HX711 scale;
 
 
@@ -35,7 +35,7 @@ float feedVal = 20; //in grams
 int feed1hour = 13;
 int feed1minute = 45;
 int feed2hour = 14;
-int feed2minute = 15;
+int feed2minute = 30;
 
 float scale_calibration_factor = 561400;
 float scale_zero_factor = 3705; 
@@ -57,10 +57,10 @@ void setup() {
   pinMode(manualFeedButton, INPUT_PULLUP);
   scale.begin(scale_dout, scale_clk);
   scale.set_scale(scale_calibration_factor);
-  
-  long zero_factor = scale.read_average(10);
-  //scale.set_offset(2049);
   scale.tare();
+  long zero_factor = scale.read_average(10);
+  scale.set_offset(zero_factor);
+  //scale.tare();
   motor.setSpeed(MOTOR_SPEED);
 }
 
@@ -279,14 +279,14 @@ void feedCycle() {
     delay(2000);
     break;
    }
-   motor.step(1019);
+   motor.step(-1529);
 //   if(stepper_direction == true) {
-//    motor.step(1019);
+//    motor.step(-1529);
 //   } else {
-//     motor.step(-1019);
+//     motor.step(1529);
 //   }
 //   stepper_direction = !stepper_direction;
-   
+//   Serial.println(stepper_direction);
   }
   lcd.clear();
 }
