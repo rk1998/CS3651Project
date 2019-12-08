@@ -10,17 +10,19 @@
 #define MOTOR_STEPS 2038
 #define MOTOR_SPEED 7
 
+//LCD Display pins
 const int rs = 13, en = 12, d4 = 11, d5 = 10, d6 = 9, d7 = 8;
 const int scale_dout = 3;
 const int scale_clk = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
+//motor pins
 const int motor1 = 7;
 const int motor2 = 6;
 const int motor3 = 5;
 const int motor4 = 4;
 
-
+//button pins
 const int setWeightButton = 14;
 const int setTimeButton = 15;
 const int manualFeedButton = 16;
@@ -57,6 +59,7 @@ void setup() {
   pinMode(manualFeedButton, INPUT_PULLUP);
   scale.begin(scale_dout, scale_clk);
   scale.set_scale(scale_calibration_factor);
+  //zero out scale and set offset to account for the weight of the bowl
   scale.tare();
   long zero_factor = scale.read_average(10);
   scale.set_offset(zero_factor);
@@ -85,7 +88,7 @@ void loop() {
   }
 
   
-  
+  //logic for handling Set Time Button press
   if(digitalRead(setTimeButton) == LOW) {
     lcd.clear();
     lcd.blink();
@@ -94,7 +97,7 @@ void loop() {
     virtualPosition = feed1hour;
     do {
       lcd.setCursor(2, 1);
-      delay(400);
+      delay(400); // delay is used to allow time to read presses from increase or decrease buttons
       if(digitalRead(increaseButton) == LOW){
           virtualPosition++;
           if(virtualPosition > 23) {
@@ -107,6 +110,7 @@ void loop() {
           }
       }
       Serial.println(virtualPosition);
+      //print out current time
       feed1hour = virtualPosition;
       lcd.setCursor(2, 1);
       printDigits(feed1hour);
@@ -214,6 +218,7 @@ void loop() {
     
   }
 
+  //similar logic is used to set the weight
   if(digitalRead(setWeightButton) == LOW) {
     lcd.clear();
     lcd.blink();
@@ -243,16 +248,21 @@ void loop() {
     delay(1000);
     lcd.clear();
   }
-  
+
+  //start feed cycle if the manual feed button is pressed
   if(digitalRead(manualFeedButton) == LOW) {
     feedCycle();
   }
+  //start feed cycle if current time matches one of the two user set times
   if((currHour == feed1hour) && (currMinute == feed1minute) && !bowl_full) {
     feedCycle();
   } else if((currHour == feed2hour) && (currMinute == feed2minute) && !bowl_full) {
     feedCycle();
   }
-  //motor.step(1);
+
+  //read current weight of food in the bowl. this will prevent
+  //the feed cycle from starting if manual feed is pressed
+  //or if one of the feed times comes up
   float current_weight = (scale.get_units(2)/0.453592)*1000;
   Serial.println("CURRENT WEIGHT: " + String(current_weight));
   if(current_weight >= .80 * feedVal) {
@@ -269,6 +279,7 @@ void feedCycle() {
   delay(500);
   motor.setSpeed(MOTOR_SPEED);
   while(true) {
+   //read current weight from scale
    float current_weight = (scale.get_units(10)/0.453592)*1000; //get weight in grams
    Serial.println("WEIGHT: " + String(current_weight));
    lcd.setCursor(0,1);
@@ -279,6 +290,7 @@ void feedCycle() {
     delay(2000);
     break;
    }
+   //turn 3/4ths of a revolution
    motor.step(-1529);
 //   if(stepper_direction == true) {
 //    motor.step(-1529);
