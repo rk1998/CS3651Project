@@ -1,8 +1,8 @@
 
 #include <Wire.h>
-#include <SparkFunDS1307RTC.h>
+#include <SparkFunDS1307RTC.h> // clock module library
 
-#include <HX711.h>
+#include <HX711.h> //load cell library
 #include <Stepper.h>
 #include <LiquidCrystal.h>
 
@@ -39,8 +39,9 @@ int feed1minute = 45;
 int feed2hour = 14;
 int feed2minute = 30;
 
-float scale_calibration_factor = 561400;
-float scale_zero_factor = 3705; 
+//scale calibration constants
+const float scale_calibration_factor = 561400;
+const float scale_zero_factor = 3705; 
 boolean bowl_full = false;
 boolean stepper_direction = true;
 
@@ -265,7 +266,7 @@ void loop() {
   //or if one of the feed times comes up
   float current_weight = (scale.get_units(2)/0.453592)*1000;
   Serial.println("CURRENT WEIGHT: " + String(current_weight));
-  if(current_weight >= .80 * feedVal) {
+  if(current_weight >= .75 * feedVal) {
     bowl_full = true;
   } else {
     bowl_full = false;
@@ -291,7 +292,7 @@ void feedCycle() {
     break;
    }
    //turn 3/4ths of a revolution
-   motor.step(-1529);
+   motor.step(-1019);
 //   if(stepper_direction == true) {
 //    motor.step(-1529);
 //   } else {
